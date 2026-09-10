@@ -1,0 +1,462 @@
+<!DOCTYPE html>
+<html lang="pt-AO">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<title>VSMJ Soluções Tech</title>
+<meta name="theme-color" content="#0B0E1A">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div id="app">
+
+  <!-- UPDATE BANNER -->
+  <div id="update-banner" class="update-banner hidden">
+    <span>Nova versão disponível</span>
+    <button id="update-btn">Atualizar</button>
+  </div>
+
+  <!-- END OF DAY BANNER -->
+  <div id="eod-banner" class="update-banner eod-banner hidden">
+    <span>⚠️ O dia terminou — feche o caixa e sincronize os dados</span>
+    <div style="display:flex; gap:6px">
+      <button id="eod-close-caixa-btn">Fechar caixa</button>
+      <button id="eod-notify-btn">Notificar</button>
+    </div>
+  </div>
+
+  <!-- LOADING (cloud check) -->
+  <section id="screen-loading" class="screen">
+    <div class="onboard-wrap">
+      <div class="brand-mark">
+        <div class="brand-logo">K</div>
+        <h1>Kaxi POS</h1>
+        <p class="muted" id="loading-text">A verificar dados na nuvem...</p>
+      </div>
+      <button type="button" id="loading-retry-btn" class="btn-secondary hidden">Tentar novamente</button>
+    </div>
+  </section>
+
+  <!-- ONBOARDING (first run — programador apenas) -->
+  <section id="screen-onboarding" class="screen hidden">
+    <div class="onboard-wrap">
+      <div class="brand-mark">
+        <div class="brand-logo">K</div>
+        <h1>Kaxi POS</h1>
+        <p class="muted">Gestão de vendas, estoque e caixa</p>
+      </div>
+
+      <div id="dev-gate" class="card form-card">
+        <h2>Nenhuma loja encontrada</h2>
+        <p class="muted">A criação da primeira loja é feita apenas pelo programador. Se precisa de configurar o seu negócio, contacte o suporte.</p>
+        <a href="https://wa.me/244923706228?text=Ol%C3%A1%2C%20preciso%20de%20configurar%20a%20minha%20loja%20no%20Kaxi%20POS" target="_blank" class="btn-primary" style="display:block; text-align:center; text-decoration:none">Contactar suporte via WhatsApp</a>
+        <button type="button" id="dev-gate-link" class="btn-ghost">Sou o programador</button>
+        <div id="dev-gate-code" class="hidden" style="display:flex; flex-direction:column; gap:10px; margin-top:6px">
+          <input type="password" id="dev-code-input" placeholder="Código de programador">
+          <button type="button" id="dev-code-submit" class="btn-secondary">Continuar</button>
+        </div>
+      </div>
+
+      <form id="form-onboarding" class="card form-card hidden">
+        <h2>Vamos configurar a sua loja</h2>
+        <label>Nome do estabelecimento
+          <input type="text" id="ob-store-name" placeholder="Ex: Mercearia Central" required>
+        </label>
+        <label>O seu nome (dono/a)
+          <input type="text" id="ob-owner-name" placeholder="Ex: Alex Johnson" required>
+        </label>
+        <label>Crie um código de acesso (4 dígitos)
+          <input type="password" inputmode="numeric" maxlength="4" id="ob-owner-code" placeholder="••••" required>
+        </label>
+        <button type="submit" class="btn-primary">Criar loja e começar</button>
+      </form>
+    </div>
+  </section>
+
+  <!-- LOGIN -->
+  <section id="screen-login" class="screen hidden">
+    <div class="login-wrap">
+      <div class="brand-mark">
+        <div class="brand-logo">K</div>
+        <h1 id="login-store-name">Kaxi POS</h1>
+      </div>
+
+      <div id="login-store-picker" class="store-picker hidden"></div>
+
+      <form id="form-login" class="card form-card">
+        <p class="muted center">Insira o seu código de acesso</p>
+        <div class="pin-dots" id="pin-dots">
+          <span></span><span></span><span></span><span></span>
+        </div>
+        <input type="password" inputmode="numeric" maxlength="6" id="login-code" class="pin-input" autofocus>
+        <div id="login-error" class="error-text hidden">Código inválido</div>
+        <button type="submit" class="btn-primary">Entrar</button>
+        <button type="button" id="btn-switch-store" class="btn-ghost hidden">Trocar de loja</button>
+        <button type="button" id="btn-forgot-code" class="btn-ghost small" style="width:auto; margin:4px auto 0; border:none">Esqueci o meu código</button>
+      </form>
+      <button type="button" id="btn-programmer-access" class="btn-ghost small" style="width:auto; margin:18px auto 0; border:none; color:var(--text-dim)">Sou programador</button>
+    </div>
+  </section>
+
+  <!-- PROGRAMMER DASHBOARD -->
+  <section id="screen-programmer" class="screen hidden">
+    <header class="subbar">
+      <span></span>
+      <h2>Painel do Programador</h2>
+      <button class="icon-btn" id="btn-programmer-logout">🚪</button>
+    </header>
+    <div class="section-block">
+      <h3>Lojas no sistema</h3>
+      <div class="help-box">Aqui vê apenas o nome das lojas e do dono — nunca as vendas, produtos ou dados internos de cada loja.</div>
+      <div id="programmer-stores-list" class="list-card"></div>
+    </div>
+    <div class="section-block">
+      <h3>Pedidos de recuperação de código</h3>
+      <div id="programmer-recovery-list" class="list-card"></div>
+    </div>
+  </section>
+
+  <!-- MAIN APP -->
+  <div id="main-app" class="hidden">
+
+    <!-- HOME -->
+    <section id="screen-home" class="screen">
+      <header class="topbar">
+        <div>
+          <p class="greet" id="greet-text">Bom dia</p>
+          <h1 id="greet-name">—</h1>
+        </div>
+        <div class="avatar" id="avatar-badge">A</div>
+      </header>
+
+      <div class="balance-card grad-purple">
+        <p class="label-on-grad">Saldo do caixa (sessão atual)</p>
+        <h2 id="home-caixa-total">0,00 Kz</h2>
+        <p id="home-caixa-status" class="sub-on-grad">Caixa fechado</p>
+      </div>
+
+      <div class="quick-actions">
+        <button class="qa" data-nav="vendas"><span class="qa-icon icon-sale"></span>Vender</button>
+        <button class="qa" data-nav="caixa"><span class="qa-icon icon-cash"></span>Caixa</button>
+        <button class="qa" data-nav="produtos"><span class="qa-icon icon-box"></span>Produtos</button>
+        <button class="qa" data-nav="mais"><span class="qa-icon icon-more"></span>Mais</button>
+      </div>
+
+      <div class="section-block">
+        <div class="section-head">
+          <h3>Resumo de hoje</h3>
+        </div>
+        <div class="stat-grid">
+          <div class="stat-tile"><span class="stat-num" id="stat-vendas-hoje">0</span><span class="stat-lbl">Vendas</span></div>
+          <div class="stat-tile"><span class="stat-num" id="stat-total-hoje">0 Kz</span><span class="stat-lbl">Faturado</span></div>
+          <div class="stat-tile"><span class="stat-num" id="stat-lucro-hoje">0 Kz</span><span class="stat-lbl">Lucro</span></div>
+        </div>
+      </div>
+
+      <div class="section-block">
+        <div class="section-head">
+          <h3>Últimas vendas</h3>
+          <a data-nav="faturas" class="see-all">Ver tudo</a>
+        </div>
+        <div id="home-recent-sales" class="list-card"></div>
+      </div>
+    </section>
+
+    <!-- VENDAS (POS) -->
+    <section id="screen-vendas" class="screen hidden">
+      <header class="subbar">
+        <button class="back-btn" data-nav="home">‹</button>
+        <h2>Vender</h2>
+        <div style="display:flex; gap:8px">
+          <button class="icon-btn" id="btn-voice-pos" title="Vender por voz">🎤</button>
+          <button class="icon-btn" id="btn-scan-pos">▣</button>
+        </div>
+      </header>
+
+      <div class="scan-entry">
+        <input type="text" id="pos-barcode-input" placeholder="Código de barras, código do produto ou nome" autocomplete="off">
+        <button id="pos-search-btn" class="btn-secondary">Buscar</button>
+      </div>
+      <div id="pos-search-results" class="search-results"></div>
+
+      <div id="pos-quickpick" class="quickpick-grid"></div>
+
+      <div id="pos-cart" class="cart-list"></div>
+
+      <div id="pos-empty" class="empty-state">
+        <p>Carrinho vazio</p>
+        <span class="muted">Escaneie ou pesquise um produto para começar</span>
+      </div>
+
+      <div class="pos-footer">
+        <div class="pos-total-row">
+          <span>Total</span>
+          <strong id="pos-total">0,00 Kz</strong>
+        </div>
+        <button id="btn-checkout" class="btn-primary" disabled>Finalizar Venda</button>
+      </div>
+    </section>
+
+    <!-- SCANNER OVERLAY -->
+    <section id="screen-scanner" class="screen hidden scanner-screen">
+      <header class="subbar dark">
+        <button class="back-btn" id="btn-close-scanner">✕</button>
+        <h2 id="scanner-title">Escanear código de barras</h2>
+        <span></span>
+      </header>
+      <div id="qr-reader"></div>
+      <p class="scan-hint">Aponte a câmara para o código de barras do produto</p>
+      <div class="scanner-manual">
+        <input type="text" id="scanner-manual-input" placeholder="Ou digite o código manualmente">
+        <button id="scanner-manual-btn" class="btn-secondary">OK</button>
+      </div>
+    </section>
+
+    <!-- CHECKOUT MODAL -->
+    <div id="modal-checkout" class="modal hidden">
+      <div class="modal-sheet">
+        <div class="modal-handle"></div>
+        <h2>Pagamento</h2>
+        <div class="checkout-total">
+          <span>Total a pagar</span>
+          <strong id="checkout-total-amount">0,00 Kz</strong>
+        </div>
+        <div class="pay-methods">
+          <button class="pay-method" data-method="dinheiro"><span>💵</span>Dinheiro</button>
+          <button class="pay-method" data-method="kilapi"><span>🤝</span>Kilapi (Fiado)</button>
+          <button class="pay-method" data-method="transferencia"><span>🏦</span>Transferência</button>
+          <button class="pay-method" data-method="multicaixa"><span>📲</span>Multicaixa Express</button>
+        </div>
+
+        <div id="pay-customer-fields" class="pay-fields hidden">
+          <label>Nome do cliente (opcional)
+            <input type="text" id="pay-customer-name" placeholder="Nome do cliente">
+          </label>
+        </div>
+
+        <div id="pay-dinheiro-fields" class="pay-fields hidden">
+          <label>Valor recebido
+            <input type="number" id="pay-received" min="0" step="0.01">
+          </label>
+          <div class="troco-row"><span>Troco</span><strong id="pay-troco">0,00 Kz</strong></div>
+        </div>
+
+        <div id="pay-kilapi-fields" class="pay-fields hidden">
+          <label>Cliente
+            <select id="pay-client-select"></select>
+          </label>
+          <button type="button" id="btn-new-client" class="btn-ghost small">+ Novo cliente</button>
+        </div>
+
+        <div id="pay-multicaixa-fields" class="pay-fields hidden">
+          <label>Referência (opcional)
+            <input type="text" id="pay-mcx-reference" placeholder="Nº de referência ou telefone">
+          </label>
+          <label>Comprovativo de pagamento (obrigatório)
+            <div class="proof-uploader" id="pay-mcx-proof-preview">
+              <span id="pay-mcx-proof-placeholder">📎 Toque para anexar foto ou PDF do comprovativo</span>
+            </div>
+            <input type="file" accept="image/*,application/pdf" id="pay-mcx-proof-input" class="hidden-input">
+          </label>
+        </div>
+
+        <div id="pay-ref-fields" class="pay-fields hidden">
+          <label>Referência (opcional)
+            <input type="text" id="pay-reference" placeholder="Nº de referência ou telefone">
+          </label>
+          <label>Comprovativo de pagamento (obrigatório)
+            <div class="proof-uploader" id="pay-transf-proof-preview">
+              <span>📎 Toque para anexar foto ou PDF do comprovativo</span>
+            </div>
+            <input type="file" accept="image/*,application/pdf" id="pay-transf-proof-input" class="hidden-input">
+          </label>
+        </div>
+
+        <div class="modal-actions">
+          <button id="btn-cancel-checkout" class="btn-ghost">Cancelar</button>
+          <button id="btn-confirm-checkout" class="btn-primary" disabled>Confirmar Venda</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- NEW CLIENT MODAL -->
+    <div id="modal-client" class="modal hidden">
+      <div class="modal-sheet small">
+        <div class="modal-handle"></div>
+        <h2>Novo Cliente</h2>
+        <form id="form-new-client">
+          <label>Nome<input type="text" id="nc-name" required></label>
+          <label>Telefone<input type="text" id="nc-phone"></label>
+          <div class="modal-actions">
+            <button type="button" id="btn-cancel-client" class="btn-ghost">Cancelar</button>
+            <button type="submit" class="btn-primary">Guardar</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- FATURA (Invoice) -->
+    <section id="screen-fatura" class="screen hidden">
+      <header class="subbar">
+        <button class="back-btn" id="btn-fatura-back">‹</button>
+        <h2>Fatura</h2>
+        <button class="icon-btn" id="btn-print-fatura">🖨</button>
+      </header>
+      <div id="fatura-content" class="invoice-paper"></div>
+      <div class="fatura-actions">
+        <button id="btn-fatura-done" class="btn-primary">Concluir</button>
+      </div>
+    </section>
+
+    <!-- CAIXA -->
+    <section id="screen-caixa" class="screen hidden">
+      <header class="subbar">
+        <button class="back-btn" data-nav="home">‹</button>
+        <h2>Caixa</h2>
+        <span></span>
+      </header>
+      <div id="caixa-content"></div>
+    </section>
+
+    <!-- PRODUTOS -->
+    <section id="screen-produtos" class="screen hidden">
+      <header class="subbar">
+        <button class="back-btn" data-nav="mais">‹</button>
+        <h2>Produtos</h2>
+        <button class="icon-btn" id="btn-add-produto">＋</button>
+      </header>
+      <div class="scan-entry">
+        <input type="text" id="produtos-search" placeholder="Pesquisar produto...">
+      </div>
+      <div id="produtos-list" class="list-card"></div>
+    </section>
+
+    <!-- PRODUTO FORM -->
+    <section id="screen-produto-form" class="screen hidden">
+      <header class="subbar">
+        <button class="back-btn" id="btn-produto-form-back">‹</button>
+        <h2 id="produto-form-title">Novo Produto</h2>
+        <span></span>
+      </header>
+      <form id="form-produto" class="form-card">
+        <div class="photo-picker">
+          <label for="pf-photo-input" class="photo-preview" id="pf-photo-preview">
+            <span id="pf-photo-placeholder">📷<br>Foto do produto</span>
+          </label>
+          <input type="file" accept="image/*" capture="environment" id="pf-photo-input" class="hidden-input">
+        </div>
+        <label>Código de barras
+          <div class="input-with-btn">
+            <input type="text" id="pf-barcode" required>
+            <button type="button" id="pf-scan-btn" class="btn-secondary small">Escanear</button>
+          </div>
+        </label>
+        <label>Nome do produto<input type="text" id="pf-name" required></label>
+        <label>Categoria<input type="text" id="pf-category" placeholder="Ex: Bebidas"></label>
+        <div class="two-col">
+          <label>Preço de venda (Kz)<input type="number" min="0" step="0.01" id="pf-price" required></label>
+          <label>Custo (Kz)<input type="number" min="0" step="0.01" id="pf-cost"></label>
+        </div>
+        <div class="two-col">
+          <label>Stock atual<input type="number" min="0" step="1" id="pf-stock" required></label>
+          <label>Stock mínimo<input type="number" min="0" step="1" id="pf-minstock" value="5"></label>
+        </div>
+        <input type="hidden" id="pf-id">
+        <button type="submit" class="btn-primary">Guardar Produto</button>
+        <button type="button" id="pf-delete-btn" class="btn-danger hidden">Eliminar Produto</button>
+      </form>
+    </section>
+
+    <!-- ESTOQUE -->
+    <section id="screen-estoque" class="screen hidden">
+      <header class="subbar">
+        <button class="back-btn" data-nav="mais">‹</button>
+        <h2>Estoque</h2>
+        <span></span>
+      </header>
+      <div class="stat-grid" style="padding:0 20px 12px">
+        <div class="stat-tile"><span class="stat-num" id="estoque-total-itens">0</span><span class="stat-lbl">Produtos</span></div>
+        <div class="stat-tile warn"><span class="stat-num" id="estoque-baixo">0</span><span class="stat-lbl">Stock baixo</span></div>
+      </div>
+      <div id="estoque-list" class="list-card"></div>
+    </section>
+
+    <!-- AJUSTE ESTOQUE MODAL -->
+    <div id="modal-ajuste" class="modal hidden">
+      <div class="modal-sheet small">
+        <div class="modal-handle"></div>
+        <h2 id="ajuste-produto-nome">Ajustar Stock</h2>
+        <form id="form-ajuste">
+          <div class="two-col">
+            <button type="button" class="toggle-btn active" data-tipo="entrada" id="btn-entrada">Entrada</button>
+            <button type="button" class="toggle-btn" data-tipo="saida" id="btn-saida">Saída</button>
+          </div>
+          <label>Quantidade<input type="number" min="1" id="ajuste-qtd" required></label>
+          <label>Motivo<input type="text" id="ajuste-motivo" placeholder="Ex: Reposição, perda, correção"></label>
+          <div class="modal-actions">
+            <button type="button" id="btn-cancel-ajuste" class="btn-ghost">Cancelar</button>
+            <button type="submit" class="btn-primary">Confirmar</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- CLIENTES -->
+    <section id="screen-clientes" class="screen hidden">
+      <header class="subbar">
+        <button class="back-btn" data-nav="mais">‹</button>
+        <h2>Clientes (Kilapi)</h2>
+        <button class="icon-btn" id="btn-add-cliente">＋</button>
+      </header>
+      <div id="clientes-list" class="list-card"></div>
+    </section>
+
+    <!-- CLIENTE DETALHE -->
+    <section id="screen-cliente-detalhe" class="screen hidden">
+      <header class="subbar">
+        <button class="back-btn" id="btn-cliente-back">‹</button>
+        <h2 id="cliente-detalhe-nome">Cliente</h2>
+        <span></span>
+      </header>
+      <div class="balance-card grad-red" id="cliente-divida-card">
+        <p class="label-on-grad">Dívida total</p>
+        <h2 id="cliente-divida-total">0,00 Kz</h2>
+      </div>
+      <button id="btn-registar-pagamento" class="btn-primary" style="margin:0 20px 16px;width:calc(100% - 40px)">Registar Pagamento</button>
+      <div id="cliente-vendas-list" class="list-card"></div>
+    </section>
+
+    <!-- PAGAMENTO CLIENTE MODAL -->
+    <div id="modal-pagamento" class="modal hidden">
+      <div class="modal-sheet small">
+        <div class="modal-handle"></div>
+        <h2>Registar Pagamento</h2>
+        <form id="form-pagamento">
+          <label>Valor pago (Kz)<input type="number" min="0" step="0.01" id="pg-valor" required></label>
+          <div class="modal-actions">
+            <button type="button" id="btn-cancel-pagamento" class="btn-ghost">Cancelar</button>
+            <button type="submit" class="btn-primary">Confirmar</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- RELATORIOS -->
+    <section id="screen-relatorios" class="screen hidden">
+      <header class="subbar">
+        <button class="back-btn" data-nav="mais">‹</button>
+        <h2>Relatórios</h2>
+        <span></span>
+      </header>
+      <div class="period-tabs">
+        <button class="period-tab active" data-period="hoje">Hoje</button>
+        <button class="period-tab" data-period="semana">Semana</button>
+        <button class="period-tab" data-period="m
